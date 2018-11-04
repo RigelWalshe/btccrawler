@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Bitcoin Node Logger</title>
+    <link rel="stylesheet" href="{% static "mystyle.css" %}"/>
+   
+  </head>
+  <body>
+
+    <h1>Live Bitcoin Node Record</h1>
+    <h2>Here's a list of nodes logged by the crawler</h2>
+    <div class="djangtwo">
+      {% if node_db %}
+      <a href="{% url 'index' %}"></a>
+         {% csrf_token %}
+        <form method="POST" action='{% url 'index' %}'>
+         {% csrf_token %}
+        <input type="submit" class="btn btn-primary" align "center" value="Home">
+      </form>
+      <br>
+          <table>
+            <thead>
+              <th>IP</th>
+              <th>Version</th>
+              <th>Services</th>
+              <th>User Agent</th>
+              <th>Start Height</th>
+              <th>Time Added</th>
+            </thead>
+
+            {% for acc in node_db %}
+              <tr>
+                <td>{{ acc.ip }}</td>
+                <td>{{ acc.version }}</td>
+                <td>{{ acc.services }}</td>
+                <td>{{ acc.user_agent }}</td>
+                <td>{{ acc.start_height }}</td>
+                <td>{{ acc.created_date }}</td>
+              </tr>
+            {% endfor %}
+        </table>
+      {% endif %}
+    </div>
+
+  </body>
+</html>

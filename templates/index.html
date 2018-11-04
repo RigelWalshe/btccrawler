@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Bitcoin Node Logger</title>
+    <link rel="stylesheet" href="{% static "mystyle.css" %}"/>
+   
+  </head>
+  <body>
+
+    <h1>Live Bitcoin Node Log</h1>
+    <h2>Click below to start gathering Node data</h2>
+     <form method="POST" action='submit'>
+          {% csrf_token %}
+         <h3>Start Crawler</h3>
+      <input type="submit" class="btn btn-primary" value="Start">
+      </form>
+      <br>
+       <form method="POST" action='halt'>
+          {% csrf_token %}
+          <h3>Stop Crawler</h3>
+        <input type="submit" class="btn btn-primary" value="Stop">
+      </form>
+      <br>
+      <form method="POST" action='nodelist'>
+         {% csrf_token %}
+          <h3>View Results</h3>
+        <input type="submit" class="btn btn-primary" value="View Results">
+      </form>
+  
+
+  </body>
+</html>
