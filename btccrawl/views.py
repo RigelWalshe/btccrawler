@@ -1,12 +1,10 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from .models import Node
 import hashlib
 import io
 import socket
 import os
 from tabulate import tabulate
-from django.shortcuts import render
 from .models import Node
 import time
 
@@ -26,7 +24,6 @@ IPV4_PREFIX = b"\x00" * 10 + b"\xff" * 2
 
 
 def fmt(bytestr):
-    # FIXME
     string = str(bytestr)
     maxlen = 500
     msg = string[:maxlen]
@@ -34,57 +31,57 @@ def fmt(bytestr):
         msg += "..."
     return re.sub("(.{80})", "\\1\n", msg, 0, re.DOTALL)
 
-
+#bytes to integer
 def bytes_to_int(b, byte_order="little"):
     return int.from_bytes(b, byte_order)
 
-
+#integer to bytes
 def int_to_bytes(i, length, byte_order="little"):
     return int.to_bytes(i, length, byte_order)
 
-
+#read n bytes and interpret it as an int with byte_order byte-order
 def read_int(stream, n, byte_order="little"):
     b = stream.read(n)
     return bytes_to_int(b, byte_order)
 
-
+#read magic bytes
 def read_magic(sock):
     magic_bytes = sock.recv(4)
     magic = bytes_to_int(magic_bytes)
     return magic
 
-
+#read command bytes
 def read_command(sock):
     raw = sock.recv(12)
     # remove empty bytes
     command = raw.replace(b"\x00", b"")
     return command
 
-
+#encode command bytes with padding as needed
 def encode_command(cmd):
     padding_needed = 12 - len(cmd)
     padding = b"\x00" * padding_needed
     return cmd + padding
 
-
+#read payload length bytes
 def read_length(sock):
     raw = sock.recv(4)
     length = bytes_to_int(raw)
     return length
 
-
+#read checksum bytes
 def read_checksum(sock):
     raw = sock.recv(4)
     return raw
 
-
+#double sha256 the checksum bytes
 def compute_checksum(payload_bytes):
     first_round = hashlib.sha256(payload_bytes).digest()
     second_round = hashlib.sha256(first_round).digest()
     first_four_bytes = second_round[:4]
     return first_four_bytes
 
-
+#function to handle packet
 def recvall(sock, n):
     data = b""
     while len(data) < n:
@@ -94,22 +91,22 @@ def recvall(sock, n):
         data += packet
     return data
 
-
+#read payload bytes
 def read_payload(sock, length):
     payload = recvall(sock, length)
     return payload
 
-
+#read version bytes
 def read_version(stream):
     return read_int(stream, 4)
 
-
+#read boolean in byte form
 def read_bool(stream):
     integer = read_int(stream, 1)
     boolean = bool(integer)
     return boolean
 
-
+#read time bytes
 def read_time(stream, version_msg=True):
     if version_msg:
         t = read_int(stream, 8)
@@ -117,11 +114,11 @@ def read_time(stream, version_msg=True):
         t = read_int(stream, 4)
     return t
 
-
+#convert time to bytes
 def time_to_bytes(time, n):
     return int_to_bytes(time, n)
 
-
+# read a variable length integer
 def read_var_int(stream):
     i = read_int(stream, 1)
     if i == 0xff:
@@ -133,15 +130,14 @@ def read_var_int(stream):
     else:
         return i
 
-
+#read a variable length string
 def read_var_str(stream):
     length = read_var_int(stream)
     string = stream.read(length)
     return string
 
-
+#encode integer as variable length integer
 def int_to_var_int(i):
-    """encodes an integer as a varint"""
     if i < 0xfd:
         return bytes([i])
     elif i < 0x10000:
@@ -153,18 +149,17 @@ def int_to_var_int(i):
     else:
         raise RuntimeError("integer too large: {}".format(i))
 
-
+#encode string as variable length string
 def str_to_var_str(s):
     length = len(s)
     return int_to_var_int(length) + s
 
-
+#See if the bit at `index` in binary representation of `number` is on
 def check_bit(number, index):
-    """See if the bit at `index` in binary representation of `number` is on"""
     mask = 1 << index
     return bool(number & mask)
 
-
+#define nodes service response
 def lookup_services_key(services, key):
     key_to_bit = {
         "NODE_NETWORK": 0,  # 1 = 2**0
@@ -176,41 +171,41 @@ def lookup_services_key(services, key):
     bit = key_to_bit[key]
     return check_bit(services, bit)
 
-
+#convert services to byte string
 def services_to_bytes(services):
     return int_to_bytes(services, 8)
 
-
+#read services bytes
 def read_services(stream):
         return read_int(stream, 8)
 
-
+#read port bytes
 def read_port(stream):
     return read_int(stream, 2, byte_order="big")
 
-
+#convert port to bytes
 def port_to_bytes(port):
     return int_to_bytes(port, 2, byte_order="big")
 
-
+#covert bool to bytes
 def bool_to_bytes(boolean):
     return int_to_bytes(int(boolean), 1)
 
-
+#convert bytes to ip
 def bytes_to_ip(b):
     if bytes(b[0:12]) == IPV4_PREFIX:  # IPv4
         return socket.inet_ntop(socket.AF_INET, b[12:16])
     else:  # IPv6
         return socket.inet_ntop(socket.AF_INET6, b)
 
-
+#convert ip to bytes
 def ip_to_bytes(ip):
     if ":" in ip:  # determine if address is IPv6
         return socket.inet_pton(socket.AF_INET6, ip)
     else:
         return IPV4_PREFIX + socket.inet_pton(socket.AF_INET, ip)
 
-
+#read ip bytes
 def read_ip(stream):
     bytes_ = stream.read(16)
     return bytes_to_ip(bytes_)
@@ -376,7 +371,7 @@ def recover(sock):
         if new_byte == b"":
             raise EOFError("Failed to recover from bad magic bytes")
         throwaway += new_byte
-        if MAGIC_BYTES[index] == new_byte[0]:  # FIXME
+        if MAGIC_BYTES[index] == new_byte[0]:
             current += new_byte
             index += 1
         else:
@@ -491,7 +486,7 @@ def handshake(address):
 
     return sock
 
- 
+#basic node crawler function
 def simple_crawler():
     addresses = [
         ("35.198.151.21", 8333),
