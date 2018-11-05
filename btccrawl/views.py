@@ -74,7 +74,7 @@ def read_checksum(sock):
     raw = sock.recv(4)
     return raw
 
-#double sha256 the checksum bytes
+#double sha256 the checksum bytes, return first 4
 def compute_checksum(payload_bytes):
     first_round = hashlib.sha256(payload_bytes).digest()
     second_round = hashlib.sha256(first_round).digest()
